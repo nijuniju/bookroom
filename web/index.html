@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ruang Meeting</title>
+    <link rel="manifest" href="manifest.json" />
+  </head>
+  <body>
+    <!-- 1. Firebase App (core) -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <!-- 2. Firebase Produk lain jika perlu -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+
+    <!-- 3. Inisialisasi Firebase Produksi -->
+    <script>
+      // Pastikan bukan emulator
+      // <script src="/__/firebase/init.js"></script> juga bisa menggantikan blok ini
+      firebase.initializeApp({
+        apiKey: "AIzaSyAEOI-qEDyJXC-2_7HmAu9anXLL4DgDsFI",
+        authDomain: "bookroom-671a1.firebaseapp.com",
+        projectId: "bookroom-671a1",
+        storageBucket: "bookroom-671a1.appspot.com",
+        messagingSenderId: "1000139953545",
+        appId: "1:1000139953545:web:88363f01ea03991d8f7d58",
+        measurementId: "G-MLXBMLL4E8"
+      });
+    </script>
+
+    <!-- 4. Main Dart JS (hasil build) -->
+    <script src="main.dart.js" type="application/javascript"></script>
+
+    <!-- 5. Flutter Bootstrap -->
+    <script src="flutter.js" defer></script>
+  </body>
+</html>
