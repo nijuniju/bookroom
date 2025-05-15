@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 final ThemeData appTheme = ThemeData(
   scaffoldBackgroundColor: const Color(0xFF5E4F34),
   primaryColor: const Color(0xFF5E4F34),
-  fontFamily: 'Roboto', // Optional: tambahkan font family kalau mau
+  textTheme: GoogleFonts.poppinsTextTheme().copyWith(
+    titleLarge: GoogleFonts.poppins(
+      fontSize: 28,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+    ),
+    bodyMedium: GoogleFonts.poppins(
+      fontSize: 16,
+      color: Colors.white,
+    ),
+    bodySmall: GoogleFonts.poppins(
+      fontSize: 14,
+      color: Colors.white70,
+    ),
+  ),
   appBarTheme: const AppBarTheme(
     backgroundColor: Colors.transparent,
     elevation: 0,
@@ -23,21 +38,6 @@ final ThemeData appTheme = ThemeData(
     ),
     iconTheme: IconThemeData(color: Colors.white),
   ),
-  textTheme: const TextTheme(
-    titleLarge: TextStyle(
-      fontSize: 28,
-      fontWeight: FontWeight.bold,
-      color: Colors.white,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 16,
-      color: Colors.white,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 14,
-      color: Colors.white70,
-    ),
-  ),
   cardTheme: CardTheme(
     color: Colors.white.withOpacity(0.95),
     shape: RoundedRectangleBorder(
@@ -49,7 +49,7 @@ final ThemeData appTheme = ThemeData(
   snackBarTheme: SnackBarThemeData(
     backgroundColor: Colors.green[600],
     behavior: SnackBarBehavior.floating,
-    contentTextStyle: const TextStyle(
+    contentTextStyle: GoogleFonts.poppins(
       color: Colors.white,
       fontWeight: FontWeight.w500,
     ),
@@ -62,7 +62,7 @@ final ThemeData appTheme = ThemeData(
       borderRadius: BorderRadius.circular(12),
       borderSide: BorderSide.none,
     ),
-    hintStyle: const TextStyle(color: Colors.black45),
+    hintStyle: GoogleFonts.poppins(color: Colors.black45),
   ),
   dropdownMenuTheme: DropdownMenuThemeData(
     menuStyle: MenuStyle(
@@ -85,7 +85,7 @@ final ThemeData appTheme = ThemeData(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
       ),
-      textStyle: const TextStyle(
+      textStyle: GoogleFonts.poppins(
         fontSize: 16,
         fontWeight: FontWeight.bold,
       ),

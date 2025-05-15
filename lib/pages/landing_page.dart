@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dashboard.dart';
 
 final ValueNotifier<bool> isLoggedIn = ValueNotifier(false);
 
@@ -10,34 +11,38 @@ class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   // Fungsi login ke Firebase dan simpan data user
-  Future<void> _firebaseLogin(
-      BuildContext context, String email, String password) async {
-    try {
-      UserCredential credential = await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
-      final uid = credential.user!.uid;
+Future<void> _firebaseLogin(
+    BuildContext context, String email, String password) async {
+  try {
+    UserCredential credential = await FirebaseAuth.instance
+        .signInWithEmailAndPassword(email: email, password: password);
+    final uid = credential.user!.uid;
 
-      // Cek dan simpan data user ke Firestore kalau belum ada
-      final doc = FirebaseFirestore.instance.collection('users').doc(uid);
-      if (!(await doc.get()).exists) {
-        await doc.set({
-          'uid': uid,
-          'email': email,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
+    // Ambil token terbaru
+    final token = await FirebaseAuth.instance.currentUser?.getIdToken(true);
+    print("Token diperbarui: $token");
 
-      isLoggedIn.value = true;
-      Navigator.of(context).pop(); // tutup dialog login
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login berhasil')),
-      );
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal: ${e.message}')),
-      );
+    // Cek dan simpan data user ke Firestore kalau belum ada
+    final doc = FirebaseFirestore.instance.collection('users').doc(uid);
+    if (!(await doc.get()).exists) {
+      await doc.set({
+        'uid': uid,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
     }
+
+    isLoggedIn.value = true;
+    Navigator.of(context).pop(); // tutup dialog login
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Login berhasil')),
+    );
+  } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Login gagal: ${e.message}')),
+    );
   }
+}
 
   void _showLoginDialog(BuildContext context) {
     final emailController = TextEditingController();
@@ -194,7 +199,10 @@ class LandingPage extends StatelessWidget {
                                 OutlinedButton.icon(
                                   onPressed: () {
                                     if (isLoggedIn.value) {
-                                      // Arahkan ke form tambah booking
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                                      );
                                     } else {
                                       _showLoginDialog(context);
                                     }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:cloud_functions/cloud_functions.dart';
+
 import '../models/form_booking.dart';
 import '../widget/form_widget.dart';
 
@@ -31,31 +34,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .get();
 
     final loadedBookings = snapshot.docs.map<form_booking>((doc) {
-     final data = doc.data();
+      final data = doc.data();
       return form_booking(
-      Nama: data['Nama'] ?? '',
-      Tujuan: data['Tujuan'] ?? '',
-      Lokasi: data['Lokasi'] ?? '',
-      Deskripsi: data['Deskripsi'] ?? '',
-      Start: DateTime.parse(data['Start']),
-      Estimasi: Duration(minutes: data['Estimasi']),
-      Timestamp: doc.id,
-  );
-}).toList();
-
+        Nama: data['Nama'] ?? '',
+        Tujuan: data['Tujuan'] ?? '',
+        Lokasi: data['Lokasi'] ?? '',
+        Deskripsi: data['Deskripsi'] ?? '',
+        Start: DateTime.parse(data['Start']),
+        Estimasi: Duration(minutes: data['Estimasi']),
+        Timestamp: doc.id,
+      );
+    }).toList();
 
     setState(() => bookings = loadedBookings);
   }
 
-  void addBooking(form_booking booking) {
-    setState(() => bookings.add(booking));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Booking berhasil disimpan!'),
-        backgroundColor: Colors.green[600],
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+  Future<void> createGoogleCalendarEvent(form_booking booking) async {
+    try {
+      final callable = FirebaseFunctions.instanceFor().httpsCallable('addEventToCalendar');
+      final result = await callable.call({
+        'summary': booking.Tujuan,
+        'description': booking.Deskripsi,
+        'location': booking.Lokasi,
+        'start': booking.Start.toIso8601String(),
+        'end': booking.Start.add(booking.Estimasi).toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint("Gagal membuat event di Google Calendar: $e");
+    }
+  }
+
+  void addBooking(form_booking booking) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      // Simpan ke Firestore
+      await FirebaseFirestore.instance.collection('bookings').add({
+        'uid': user.uid,
+        'Nama': booking.Nama,
+        'Tujuan': booking.Tujuan,
+        'Lokasi': booking.Lokasi,
+        'Deskripsi': booking.Deskripsi,
+        'Start': booking.Start.toIso8601String(),
+        'Estimasi': booking.Estimasi.inMinutes,
+      });
+
+      // Tambahkan ke list lokal & tampilkan notifikasi
+      setState(() {
+        bookings.add(booking);
+      });
+
+      // Panggil Cloud Function untuk buat event
+      await createGoogleCalendarEvent(booking);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Booking berhasil disimpan dan disinkronkan ke Google Calendar!'),
+          backgroundColor: Colors.green[600],
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      debugPrint("Error saat submit booking: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Gagal menyimpan booking.'),
+          backgroundColor: Colors.red[400],
+        ),
+      );
+    }
   }
 
   @override
@@ -66,7 +114,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFF5E4F34),
+      backgroundColor: const Color(0xFF81C784).withOpacity(0.4),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(150),
         child: AppBar(
@@ -76,16 +124,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  SizedBox(height: 20),
+                children: [
+                  const SizedBox(height: 20),
                   Text(
                     'DASHBOARD',
-                    style: TextStyle(
+                    style: GoogleFonts.poppins(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 5,
-                      color: Colors.white,
-                      shadows: [
+                      color: const Color(0xFFE7F9E4),
+                      shadows: const [
                         Shadow(
                           blurRadius: 4,
                           color: Colors.black45,
@@ -95,12 +143,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 6),
-                  Text(
+                  const SizedBox(height: 6),
+                  const Text(
                     'Pantau jadwal meeting Anda di sini',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white70,
+                      color: Color(0xFFC6DE9B),
                       fontStyle: FontStyle.italic,
                       letterSpacing: 1,
                     ),
@@ -114,25 +162,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: Stack(
         children: [
-          // background image
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/bg_meeting.jpg'),
+                image: AssetImage('assets/bg_landing3.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // overlay gelap
           Container(
-            color: Colors.black.withOpacity(0.4),
+            color: Colors.black.withOpacity(0.2),
           ),
-          // konten
           SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  "Form Booking Ruang Meeting",
+                  style: GoogleFonts.poppins(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    shadows: const [
+                      Shadow(
+                        blurRadius: 2,
+                        color: Colors.black26,
+                        offset: Offset(1, 1),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Card(
                   color: Colors.white.withOpacity(0.95),
                   shape: RoundedRectangleBorder(
@@ -146,12 +207,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
                 const SizedBox(height: 30),
                 Text(
-                  "📍 Meeting On-going",
-                  style: TextStyle(
+                  "Meeting On-going",
+                  style: GoogleFonts.poppins(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    shadows: [
+                    shadows: const [
                       Shadow(
                         blurRadius: 4,
                         color: Colors.black26,
@@ -165,9 +226,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 24),
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       '⏳ Tidak ada meeting yang sedang berlangsung.',
-                      style: TextStyle(
+                      style: GoogleFonts.poppins(
                         fontSize: 16,
                         color: Colors.white70,
                       ),
@@ -184,7 +245,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       contentPadding: const EdgeInsets.all(16),
                       title: Text(
                         booking.Nama,
-                        style: const TextStyle(
+                        style: GoogleFonts.poppins(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -192,11 +253,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 4),
-                          Text('Tujuan: ${booking.Tujuan}'),
+                          Text('Tujuan: ${booking.Tujuan}',
+                              style: GoogleFonts.poppins()),
                           const SizedBox(height: 2),
                           Text(
                             '${DateFormat.Hm().format(booking.Start)} - ${DateFormat.Hm().format(booking.Start.add(booking.Estimasi))}',
-                            style: const TextStyle(
+                            style: GoogleFonts.poppins(
                               color: Colors.black54,
                             ),
                           ),
